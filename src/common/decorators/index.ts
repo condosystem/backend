@@ -1,3 +1,4 @@
 /* eslint-disable prettier/prettier */
-export * from './get-current-user';
-export * from './get-current-user-id';
+export * from './get-current-user.decorator';
+export * from './get-current-user-id.decorator';
+export * from './public.decorator';

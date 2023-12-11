@@ -6,11 +6,11 @@ import { Tokens } from 'src/types';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { jwtAtSecret, jwtRtSecret } from './constants';
-//import { AuthRepository } from 'src/repositories/AuthRepository';
+import { AuthRepository } from 'src/repositories/AuthRepository';
 
 
 @Injectable()
-export class AuthService /*implements AuthRepository*/ {
+export class AuthService implements AuthRepository {
     constructor(
         private prisma: PrismaService,
         private jwtService: JwtService
@@ -71,8 +71,6 @@ export class AuthService /*implements AuthRepository*/ {
 
     async logout(id: string) {
 
-        //const id = req.user['sub'];
-
         await this.prisma.account.updateMany({
             where: {
                 id,
@@ -86,18 +84,13 @@ export class AuthService /*implements AuthRepository*/ {
 
     async refresh(id: string, refreshToken: string) {
 
-        /*
-        const id = req.user['sub'];
-        const refreshToken = req.user['refreshToken'];
-        */
-
         const account = await this.prisma.account.findUnique({
             where: { id }
         });
 
-        if (!account) throw new ForbiddenException('Access Denied');
-
-        const rtHash = bcrypt.compare(id, refreshToken);
+        if (!account || !account.hashedRt) throw new ForbiddenException('Access Denied');
+        
+        const rtHash = bcrypt.compare(refreshToken, account.hashedRt);
 
         if (!rtHash) throw new ForbiddenException('Access Denied');
 
