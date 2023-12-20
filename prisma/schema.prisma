@@ -10,17 +10,295 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Locality {
+  id   String @id @default(uuid())
+  ksId Int    @default(autoincrement())
+
+  designation String?
+
+  district Boolean @default(false)
+  status   Boolean @default(true)
+
+  localityId String?
+  locality   Locality? @relation("LocalityWithLocalities", fields: [localityId], references: [id])
+
+  Localities Locality[] @relation("LocalityWithLocalities")
+  Unities    Unity[]
+  Person     Person[]
+
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @default(now())
+
+  @@map("localities")
+}
+
+model Ministry {
+  id   String @id @default(uuid())
+  ksId Int    @default(autoincrement())
+
+  name  String
+  email String @default("Não atribuído.")
+
+  status Boolean @default(true)
+
+  Sectors Sector[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@map("ministrys")
+}
+
+model Sector {
+  id   String @id @default(uuid())
+  ksId Int    @default(autoincrement())
+
+  name  String
+  email String @default("Não atribuído.")
+
+  description String? @default("Nenhuma.")
+  status      Boolean @default(true)
+
+  ministryId String
+  ministry   Ministry @relation(fields: [ministryId], references: [id])
+
+  Unities Unity[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@map("sectors")
+}
+
+model Unity {
+  id   String @id @default(uuid())
+  ksId Int    @default(autoincrement())
+
+  name String
+
+  status Boolean @default(true)
+
+  Sector   Sector @relation(fields: [sectorId], references: [id])
+  sectorId String
+
+  locality   Locality @relation(fields: [localityId], references: [id])
+  localityId String
+  
+  Entrances    Entrance[]
+  UnitySection UnitySection[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@map("unity")
+}
+
+model Section {
+  id   String @id @default(uuid())
+  ksId Int    @default(autoincrement())
+
+  name String
+
+  status Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  UnitySection UnitySection[]
+
+  @@map("sections")
+}
+
+model UnitySection {
+  id   String @id @default(uuid())
+  ksId Int    @default(autoincrement())
+
+  sectionId String
+  Section   Section @relation(fields: [sectionId], references: [id])
+
+  unityId String
+  Unity   Unity  @relation(fields: [unityId], references: [id])
+
+  status Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@map("unitysection")
+}
 
 model Account {
+  id   String @id @default(uuid())
+  ksId Int    @default(autoincrement())
 
-  id String @id @default(uuid())
-  ksId Int @default(autoincrement())
-  email String @unique
-  hash String
+  email    String  @unique
+  hash     String
   hashedRt String?
+
+  status Boolean @default(false)
+
+  accountTypeId String
+  AccountType   AccountType @relation(fields: [accountTypeId], references: [id])
+
+  Employee Employee?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
 
   @@map("accounts")
+}
+
+model AccountType {
+  id   String @id @default(uuid())
+  ksId Int    @default(autoincrement())
+
+  designation String
+
+  status Boolean @default(true)
+
+  Accounts Account[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@map("accounttype")
+}
+
+model Person {
+  id   String @id @default(uuid())
+  ksId Int    @default(autoincrement())
+  
+  name         String
+  idCardNumber String @unique
+
+  fingerprint String
+  avatar      String?
+
+  locality   Locality @relation(fields: [localityId], references: [id])
+  localityId String
+
+  status Boolean @default(true)
+
+  Employee  Employee?
+  Entrances Entrance[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@map("persons")
+}
+
+// Estagiario, Júnior ou Senior
+model LevelEmployee {
+  id   String @id @default(uuid())
+  ksId Int    @default(autoincrement())
+
+  designation Int
+
+  status Boolean @default(true)
+
+  Employees Employee[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@map("levelemployee")
+}
+
+model Employee {
+  id   String @id @default(uuid())
+  ksId Int    @default(autoincrement())
+
+  status Boolean @default(true)
+
+  levelEmployeeId String
+  LevelEmployee   LevelEmployee @relation(fields: [levelEmployeeId], references: [id])
+
+  personId String @unique
+  Person   Person @relation(fields: [personId], references: [idCardNumber])
+
+  account   Account? @relation(fields: [accountId], references: [id])
+  accountId String?  @unique
+
+  Signature Signature?
+
+  PositionEmployee EmployeePosition[]
+  Entrances        Entrance[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@map("employees")
+}
+
+model Position {
+  id   String @id @default(uuid())
+  ksId Int    @default(autoincrement())
+
+  designation String
+
+  status Boolean @default(true)
+
+  EmployeePosition EmployeePosition[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@map("positions")
+}
+
+model EmployeePosition {
+  id   String @id @default(uuid())
+  ksId Int    @default(autoincrement())
+
+  Position   Position @relation(fields: [positionId], references: [id])
+  positionId String
+
+  Employee   Employee @relation(fields: [employeeId], references: [personId])
+  employeeId String
+
+  status Boolean @default(true)
+
+  startsAt DateTime
+  endsAt   DateTime
+
+  @@map("employeeposition")
+}
+
+model Signature {
+  id   String @id @default(uuid())
+  ksId Int    @default(autoincrement())
+
+  signature String
+
+  employeeId String   @unique
+  Employee   Employee @relation(fields: [employeeId], references: [personId])
+
+  status Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@map("signatures")
+}
+
+model Entrance {
+  id   String @id @default(uuid())
+  ksId Int    @default(autoincrement())
+
+  personId String
+  Person   Person @relation(fields: [personId], references: [idCardNumber])
+  
+  employeeId String
+  Employee   Employee @relation(fields: [employeeId], references: [personId])
+
+  unityId String
+  Unity   Unity  @relation(fields: [unityId], references: [id])
+
+  status Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@map("entrances")
 }

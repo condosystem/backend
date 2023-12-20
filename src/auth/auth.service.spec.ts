@@ -1,18 +1,38 @@
-import { Test, TestingModule } from '@nestjs/testing';
+/* eslint-disable prettier/prettier */
+import { PrismaService } from 'src/prisma/prisma.service';
+import { describe, expect, it } from 'vitest';
 import { AuthService } from './auth.service';
+import { JwtService } from '@nestjs/jwt';
 
-describe('AuthService', () => {
-  let service: AuthService;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [AuthService],
-    }).compile();
+const prismaService = new PrismaService();
+const jwtService = new JwtService();
+const sut = new AuthService(prismaService, jwtService); // sut = system under test
 
-    service = module.get<AuthService>(AuthService);
+
+describe("Authentication User", () => {
+
+
+  const email = "samisabino23@gmail.com";
+  const password = "testpassword";
+  const accountTypeId = "2121";
+
+  it("not should create an account", () => {
+    expect(
+      sut.signup({
+        email,
+        password,
+        accountTypeId
+      })
+    ).rejects.toThrow
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  it("should make signin of user", () => {
+    expect(
+      sut.signin({
+        email,
+        password
+      })
+    ).resolves
   });
 });

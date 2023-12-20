@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 
-import { IsNotEmpty, IsEmail, IsString } from "class-validator";
+import { IsNotEmpty, IsEmail, IsString, IsUUID } from "class-validator";
 
 export class AuthDto {
 
@@ -12,4 +12,9 @@ export class AuthDto {
     @IsNotEmpty()
     @IsString()
     password: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @IsUUID()
+    accountTypeId: string;
 }

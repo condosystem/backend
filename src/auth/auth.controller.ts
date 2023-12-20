@@ -1,11 +1,12 @@
 /* eslint-disable prettier/prettier */
 import { Body, Controller, Get, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { AuthDto } from 'src/dto';
+import { AuthDto } from 'src/auth/dto';
 import { Tokens } from 'src/types';
 import { AuthRepository } from 'src/repositories/AuthRepository';
 import { RtGuard } from 'src/common/guards';
 import { GetCurrentUser, GetCurrentUserId, Public } from 'src/common/decorators';
+import { trim } from 'src/functions';
 
 @Controller('auth')
 export class AuthController implements AuthRepository {
@@ -16,33 +17,39 @@ export class AuthController implements AuthRepository {
     @Public()
     @Post('signup')
     @HttpCode(HttpStatus.CREATED)
-    signup(@Body() dto: AuthDto): Promise<Tokens> {
-        return this.authService.signup(dto);
+    signup(@Body() { email, password, accountTypeId }: AuthDto): Promise<Tokens> {
+        return this.authService.signup({
+            email: trim(email),
+            password: trim(password),
+            accountTypeId: trim(accountTypeId)
+        });
+    }
+
+    @Get('/')
+    @HttpCode(HttpStatus.OK)
+    findAll() {
+        return this.authService.findAll()
+    }
+
+    @Public()
+    @Get('email')
+    @HttpCode(HttpStatus.OK)
+    findByEmail(@Body() dto: string) {
+        console.log(dto)
+        return this.authService.findByEmail(trim(dto['email']))
     }
 
     @Public()
     @Post('signin')
     @HttpCode(HttpStatus.OK)
-    signin(@Body() dto: AuthDto): Promise<Tokens> {
-        return this.authService.signin(dto);
-    }
-
-    @Get('email')
-    @HttpCode(HttpStatus.OK)
-    findByEmail(email: string) {
-        return this.authService.findByEmail(email);
-    }
-
-    @Post('update')
-    @HttpCode(HttpStatus.OK)
-    updateRtHash(id: string, rtToken: string) {
-        return this.authService.updateRtHash(id, rtToken);
+    signin(@Body() { email, password }): Promise<Tokens> {
+        return this.authService.signin({ email: trim(email), password: trim(password) });
     }
 
     @Post('logout')
     @HttpCode(HttpStatus.OK)
     logout(@GetCurrentUserId() id: string) {
-        return this.authService.logout(id);
+        return this.authService.logout(trim(id));
     }
 
     @Public()
@@ -53,6 +60,6 @@ export class AuthController implements AuthRepository {
         @GetCurrentUserId() id: string,
         @GetCurrentUser('refreshToken') refreshToken: string
     ) {
-        return this.authService.refresh(id, refreshToken);
+        return this.authService.refresh(trim(id), trim(refreshToken));
     }
 }

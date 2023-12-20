@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
-import { ConflictException, ForbiddenException, Injectable, NotFoundException, } from '@nestjs/common';
-import { AuthDto } from 'src/dto';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { AuthDto } from 'src/auth/dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { Tokens } from 'src/types';
 import * as bcrypt from 'bcrypt';
@@ -17,7 +17,7 @@ export class AuthService implements AuthRepository {
 
     ) { }
 
-    async signup({ email, password }: AuthDto): Promise<Tokens> {
+    async signup({ email, password, accountTypeId }: AuthDto): Promise<Tokens> {
 
         const emailAlreadyExists = await this.prisma.account.findUnique({
             where: { email }
@@ -30,7 +30,8 @@ export class AuthService implements AuthRepository {
         const account = await this.prisma.account.create({
             data: {
                 email,
-                hash
+                hash,
+                accountTypeId
             }
         });
 
@@ -40,7 +41,36 @@ export class AuthService implements AuthRepository {
         return tokens;
     }
 
-    async signin({ email, password }: AuthDto): Promise<Tokens> {
+    async findAll() {
+
+        const accounts = await this.prisma.account.findMany();
+
+        return accounts;
+    }
+
+    async findByEmail(email: string) {
+
+        const account = await this.prisma.account.findUnique({
+            where: { email }
+        });
+
+        if (!account) throw new NotFoundException('Account not found.');
+
+        return account;
+    }
+
+    async findOne(id: string) {
+
+        const account = await this.prisma.account.findUnique({
+            where: { id }
+        });
+
+        if (!account) throw new NotFoundException('Account not found.');
+
+        return account;
+    }
+
+    async signin({ email, password }): Promise<Tokens> {
 
         const account = await this.prisma.account.findUnique({
             where: { email }
@@ -56,17 +86,6 @@ export class AuthService implements AuthRepository {
         await this.updateRtHash(account.id, tokens.refresh_token);
 
         return tokens;
-    }
-
-    async findByEmail(email: string) {
-
-        const account = await this.prisma.account.findUnique({
-            where: { email }
-        });
-
-        if (!account) throw new NotFoundException('Email not exists');
-
-        return account;
     }
 
     async logout(id: string) {
@@ -89,7 +108,7 @@ export class AuthService implements AuthRepository {
         });
 
         if (!account || !account.hashedRt) throw new ForbiddenException('Access Denied');
-        
+
         const rtHash = bcrypt.compare(refreshToken, account.hashedRt);
 
         if (!rtHash) throw new ForbiddenException('Access Denied');
