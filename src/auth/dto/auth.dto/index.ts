@@ -17,4 +17,8 @@ export class AuthDto {
     @IsString()
     @IsUUID()
     accountTypeId: string;
+
+    @IsNotEmpty()
+    @IsString()
+    employeeId: string;
 }

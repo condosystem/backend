@@ -3,6 +3,7 @@ import { Body, Controller, Get, HttpCode, HttpStatus, Param, Post } from '@nestj
 import { AccountTypeService } from './account-type.service';
 import { Public } from 'src/common/decorators';
 import { AccountTypeDto } from './dto';
+import { transform } from 'src/functions';
 
 @Controller('accountType')
 export class AccountTypeController {
@@ -14,8 +15,10 @@ export class AccountTypeController {
     @Public()
     @Post('/')
     @HttpCode(HttpStatus.CREATED)
-    create(@Body() dto: AccountTypeDto) {
-        return this.accountTypeService.create(dto)
+    create(@Body() { designation }: AccountTypeDto) {
+        return this.accountTypeService.create({
+            designation: transform(designation)
+        })
     }
 
     @Public()

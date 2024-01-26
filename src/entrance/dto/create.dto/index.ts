@@ -6,10 +6,10 @@ export class CreateDto {
 
     @IsNotEmpty()
     @IsString()
-    fingerprint: string;
+    idCardNumber: string;
 
     @IsNotEmpty()
     @IsString()
     @IsUUID()
-    unityId: string;
+    sectionId: string;
 }

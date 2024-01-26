@@ -73,7 +73,8 @@ export class LocalityService {
                         }
                     }
                 }
-            }
+            },
+            orderBy: { designation: 'asc' }
         });
 
         return localities;

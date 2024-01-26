@@ -1,6 +1,8 @@
 /* eslint-disable prettier/prettier */
-import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { FindByNameDto } from './dto/findByName.dto';
+import { FindByIdCardNumberDto } from './dto/findByIdCardNumber.dto';
 
 @Injectable()
 export class EntranceService {
@@ -9,29 +11,43 @@ export class EntranceService {
         private prisma: PrismaService
     ) { }
 
-    async create({ userId, fingerprint, unityId }) {
+    async create({ userId, idCardNumber, sectionId }) {
+
+        const section = await this.prisma.section.findUnique({
+            where: {
+                id: sectionId,
+            }
+        });
+
+        if (!section) throw new NotFoundException('Section not found.');
 
         const account = await this.prisma.account.findUnique({
-            where: { id: userId },
+            where: {
+                id: userId,
+            },
             include: {
-                Employee: true
+                Employee: true,
+                AccountType: true
             }
         });
 
         if (!account) throw new NotFoundException('Account not found.');
 
+        if (!account.status) throw new ForbiddenException('Access denied.');
+
+        if (account.AccountType.designation.toLowerCase() !== 'funcionario') throw new ForbiddenException('Access denied.');
+
         const person = await this.prisma.person.findFirst({
             where: {
-                fingerprint
+                idCardNumber
             }
         });
 
         if (!person) throw new NotFoundException('Person not found.');
 
-
         const unity = await this.prisma.unity.findUnique({
             where: {
-                id: unityId,
+                id: account.Employee.unityId,
             }
         });
 
@@ -45,12 +61,21 @@ export class EntranceService {
 
         if (!employee) throw new NotFoundException('Employee not found.');
 
-        if (person.idCardNumber === employee.personId) throw new ConflictException("Employee responsible should be different of Person.")
+        if (person.idCardNumber === employee.personId) throw new ConflictException("Employee responsible should be different of Person.");
+
+        const unitySection = await this.prisma.unitySection.findFirst({
+            where: {
+                unityId: account.Employee.unityId,
+                sectionId
+            }
+        });
+
+        if (!unitySection) throw new NotFoundException('UnitySection not found.');
 
         const entrance = await this.prisma.entrance.create({
             data: {
                 personId: person.idCardNumber,
-                unityId,
+                unitySectionId: unitySection.id,
                 employeeId: employee.personId
             }
         });
@@ -60,51 +85,97 @@ export class EntranceService {
 
     async findAll() {
 
-        const ministries = await this.prisma.entrance.findMany({
+        const entrances = await this.prisma.entrance.findMany({
             include: {
                 Person: true,
-                Unity: true,
+                UnitySection: {
+                    include: {
+                        Unity: true,
+                        Section: true
+                    }
+                },
                 Employee: true
-            }
+            },
+            orderBy: { createdAt: 'asc' }
         });
 
-        return ministries;
+        return entrances;
     }
 
-    async findByName(name: string) {
+    async findByName({ name }: FindByNameDto) {
 
         const person = await this.prisma.person.findFirst({
             where: { name }
         });
 
         if (!person) throw new NotFoundException('Person not found.');
-        
-        const entrance = await this.prisma.entrance.findFirst({
+
+        const entrances = await this.prisma.entrance.findMany({
             where: { personId: person.idCardNumber },
             include: {
                 Person: true,
-                Unity: {
+                UnitySection: {
                     include: {
-                        locality: {
+                        Unity: true,
+                        Section: true
+                    }
+                },
+                Employee: {
+                    include: {
+                        Person: true
+                    }
+                }
+            },
+        });
+
+        if (!entrances) throw new NotFoundException('Entrances not found.');
+
+        return entrances;
+    }
+
+    async findByIdCardNumber({ idCardNumber }: FindByIdCardNumberDto) {
+
+        const person = await this.prisma.person.findFirst({
+            where: { idCardNumber }
+        });
+
+        if (!person) throw new NotFoundException('Person not found.');
+
+        const entrances = await this.prisma.entrance.findMany({
+            where: { personId: person.idCardNumber },
+            include: {
+                Person: {
+                    include: {
+                        locality: true
+                    }
+                },
+                UnitySection: {
+                    include: {
+                        Unity: {
                             include: {
-                                locality: {
-                                    include: {
-                                        locality: {
-                                            include: {
-                                                locality: true
-                                            }
-                                        }
-                                    }
-                                }
+                                locality: true
+                            }
+                        },
+                        Section: true
+                    }
+                },
+                Employee: {
+                    include: {
+                        Person: {
+                            include:{
+                                locality: true
                             }
                         }
                     }
                 }
+            },
+            orderBy: {
+                createdAt: 'desc'
             }
         });
 
-        if (!entrance) throw new NotFoundException('Entrance not found.');
+        if (!entrances) throw new NotFoundException('Entrances not found.');
 
-        return entrance;
+        return entrances;
     }
 }

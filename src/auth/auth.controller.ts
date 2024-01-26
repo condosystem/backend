@@ -17,33 +17,34 @@ export class AuthController implements AuthRepository {
     @Public()
     @Post('signup')
     @HttpCode(HttpStatus.CREATED)
-    signup(@Body() { email, password, accountTypeId }: AuthDto): Promise<Tokens> {
+    signup(@Body() { email, password, accountTypeId, employeeId }: AuthDto): Promise<Tokens> {
         return this.authService.signup({
-            email: trim(email),
+            email: trim(email.toLowerCase()),
             password: trim(password),
-            accountTypeId: trim(accountTypeId)
+            accountTypeId: trim(accountTypeId),
+            employeeId: trim(employeeId)
         });
     }
 
+    @Public()
     @Get('/')
     @HttpCode(HttpStatus.OK)
     findAll() {
         return this.authService.findAll()
     }
-
+    
     @Public()
     @Get('email')
     @HttpCode(HttpStatus.OK)
-    findByEmail(@Body() dto: string) {
-        console.log(dto)
-        return this.authService.findByEmail(trim(dto['email']))
+    findByEmail(@Body() email: string) {
+        return this.authService.findByEmail(trim(email.toLowerCase()))
     }
 
     @Public()
     @Post('signin')
     @HttpCode(HttpStatus.OK)
     signin(@Body() { email, password }): Promise<Tokens> {
-        return this.authService.signin({ email: trim(email), password: trim(password) });
+        return this.authService.signin({ email: trim(email.toLowerCase()), password: trim(password) });
     }
 
     @Post('logout')

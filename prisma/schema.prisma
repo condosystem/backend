@@ -74,7 +74,8 @@ model Unity {
   id   String @id @default(uuid())
   ksId Int    @default(autoincrement())
 
-  name String
+  name   String
+  qrcode String?
 
   status Boolean @default(true)
 
@@ -83,9 +84,9 @@ model Unity {
 
   locality   Locality @relation(fields: [localityId], references: [id])
   localityId String
-  
-  Entrances    Entrance[]
+
   UnitySection UnitySection[]
+  Employees    Employee[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
@@ -119,6 +120,8 @@ model UnitySection {
   unityId String
   Unity   Unity  @relation(fields: [unityId], references: [id])
 
+  Entrances Entrance[]
+
   status Boolean @default(true)
 
   createdAt DateTime @default(now())
@@ -136,11 +139,12 @@ model Account {
   hashedRt String?
 
   status Boolean @default(false)
-
+  
   accountTypeId String
   AccountType   AccountType @relation(fields: [accountTypeId], references: [id])
 
-  Employee Employee?
+  employeeId String   @unique
+  Employee   Employee @relation(fields: [employeeId], references: [personId])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
@@ -167,12 +171,12 @@ model AccountType {
 model Person {
   id   String @id @default(uuid())
   ksId Int    @default(autoincrement())
-  
+
   name         String
   idCardNumber String @unique
-
-  fingerprint String
+  
   avatar      String?
+  qrcode      String?
 
   locality   Locality @relation(fields: [localityId], references: [id])
   localityId String
@@ -188,98 +192,26 @@ model Person {
   @@map("persons")
 }
 
-// Estagiario, Júnior ou Senior
-model LevelEmployee {
-  id   String @id @default(uuid())
-  ksId Int    @default(autoincrement())
-
-  designation Int
-
-  status Boolean @default(true)
-
-  Employees Employee[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-
-  @@map("levelemployee")
-}
-
 model Employee {
   id   String @id @default(uuid())
   ksId Int    @default(autoincrement())
 
   status Boolean @default(true)
 
-  levelEmployeeId String
-  LevelEmployee   LevelEmployee @relation(fields: [levelEmployeeId], references: [id])
-
   personId String @unique
   Person   Person @relation(fields: [personId], references: [idCardNumber])
 
-  account   Account? @relation(fields: [accountId], references: [id])
-  accountId String?  @unique
+  unityId String
+  Unity   Unity  @relation(fields: [unityId], references: [id])
 
-  Signature Signature?
+  Account Account?
 
-  PositionEmployee EmployeePosition[]
-  Entrances        Entrance[]
+  Entrances Entrance[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
 
   @@map("employees")
-}
-
-model Position {
-  id   String @id @default(uuid())
-  ksId Int    @default(autoincrement())
-
-  designation String
-
-  status Boolean @default(true)
-
-  EmployeePosition EmployeePosition[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-
-  @@map("positions")
-}
-
-model EmployeePosition {
-  id   String @id @default(uuid())
-  ksId Int    @default(autoincrement())
-
-  Position   Position @relation(fields: [positionId], references: [id])
-  positionId String
-
-  Employee   Employee @relation(fields: [employeeId], references: [personId])
-  employeeId String
-
-  status Boolean @default(true)
-
-  startsAt DateTime
-  endsAt   DateTime
-
-  @@map("employeeposition")
-}
-
-model Signature {
-  id   String @id @default(uuid())
-  ksId Int    @default(autoincrement())
-
-  signature String
-
-  employeeId String   @unique
-  Employee   Employee @relation(fields: [employeeId], references: [personId])
-
-  status Boolean @default(true)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now())
-
-  @@map("signatures")
 }
 
 model Entrance {
@@ -288,12 +220,12 @@ model Entrance {
 
   personId String
   Person   Person @relation(fields: [personId], references: [idCardNumber])
-  
+
   employeeId String
   Employee   Employee @relation(fields: [employeeId], references: [personId])
 
-  unityId String
-  Unity   Unity  @relation(fields: [unityId], references: [id])
+  unitySectionId String
+  UnitySection   UnitySection @relation(fields: [unitySectionId], references: [id])
 
   status Boolean @default(true)
 

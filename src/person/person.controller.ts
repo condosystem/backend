@@ -32,9 +32,9 @@ export class PersonController {
     }
 
     @Public()
-    @Get(':id')
+    @Get(':idCardNumber')
     @HttpCode(HttpStatus.OK)
     findOne(@Param() dto: string) {
-        return this.personService.findOne(trim(dto['id']))
+        return this.personService.findOne(trim(dto['idCardNumber']))
     }
 }

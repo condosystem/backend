@@ -17,7 +17,23 @@ export class AuthService implements AuthRepository {
 
     ) { }
 
-    async signup({ email, password, accountTypeId }: AuthDto): Promise<Tokens> {
+    async signup({ email, password, accountTypeId, employeeId }: AuthDto): Promise<Tokens> {
+
+        const accountType = await this.prisma.accountType.findUnique({
+            where: {
+                id: accountTypeId,
+            }
+        });
+
+        if (!accountType) throw new NotFoundException('Account Type not found.');
+
+        const employee = await this.prisma.employee.findUnique({
+            where: {
+                personId: employeeId,
+            }
+        });
+
+        if (!employee) throw new NotFoundException('Employee not found.');
 
         const emailAlreadyExists = await this.prisma.account.findUnique({
             where: { email }
@@ -31,7 +47,8 @@ export class AuthService implements AuthRepository {
             data: {
                 email,
                 hash,
-                accountTypeId
+                accountTypeId,
+                employeeId
             }
         });
 
@@ -73,7 +90,10 @@ export class AuthService implements AuthRepository {
     async signin({ email, password }): Promise<Tokens> {
 
         const account = await this.prisma.account.findUnique({
-            where: { email }
+            where: {
+                email,
+                status: true
+            }
         });
 
         if (!account) throw new ForbiddenException('Access Denied');

@@ -11,13 +11,13 @@ export class SectorService {
 
     async create({ name, email, ministryId }: CreateDto) {
 
-        const sectorNotFound = await this.prisma.ministry.findUnique({
+        const ministryNotFound = await this.prisma.ministry.findUnique({
             where: {
                 id: ministryId,
             }
         });
 
-        if (!sectorNotFound) throw new NotFoundException('Sector not found.');
+        if (!ministryNotFound) throw new NotFoundException('Ministry not found.');
 
         const sectorAlreadyExists = await this.prisma.sector.findFirst({
             where: {
@@ -43,7 +43,8 @@ export class SectorService {
         const sectors = await this.prisma.sector.findMany({
             include: {
                 Unities: true
-            }
+            },
+            orderBy: { name: 'asc' }
         });
 
         return sectors;

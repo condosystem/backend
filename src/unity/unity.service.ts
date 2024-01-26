@@ -2,6 +2,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateDto } from './dto';
+import { QrCode } from 'src/functions';
 
 @Injectable()
 export class UnityService {
@@ -34,7 +35,7 @@ export class UnityService {
                 sectorId
             }
         });
-        
+
         if (unityAlreadyExists) throw new ConflictException('Unity already exists.');
 
         const unity = await this.prisma.unity.create({
@@ -45,18 +46,30 @@ export class UnityService {
             }
         });
 
-        return unity;
+        const qrCodeFilename = await QrCode(unity.ksId + '-' + unity.name);
+
+        const unityUpdated = await this.prisma.unity.update({
+            data: {
+                qrcode: qrCodeFilename.toString()
+            },
+            where: {
+                id: unity.id
+            }
+        })
+        
+        return unityUpdated;
     }
 
     async findAll() {
 
-        const ministries = await this.prisma.unity.findMany({
+        const unities = await this.prisma.unity.findMany({
             include: {
-                Entrances: true
-            }
+                UnitySection: true
+            },
+            orderBy: { name: 'asc' }
         });
 
-        return ministries;
+        return unities;
     }
 
     async findOne(id: string) {
@@ -64,7 +77,7 @@ export class UnityService {
         const unity = await this.prisma.unity.findUnique({
             where: { id },
             include: {
-                Entrances: true
+                UnitySection: true
             }
         });
 

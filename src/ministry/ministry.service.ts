@@ -34,7 +34,8 @@ export class MinistryService {
         const ministries = await this.prisma.ministry.findMany({
             include: {
                 Sectors: true
-            }
+            },
+            orderBy: { name: 'asc' }
         });
 
         return ministries;
